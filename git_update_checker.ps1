@@ -1,9 +1,10 @@
 # ============================================
 # Git Repository Update Checker (PowerShell)
-# Checks all repos in the same folder as this script
+# Checks all repos in the parent folder
 # ============================================
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ScanDir = Split-Path -Parent $ScriptDir  # Scan parent folder (where all repos live)
 $LogFile = Join-Path $ScriptDir "git_update_log.txt"
 
 # Initialize counters
@@ -24,12 +25,12 @@ Git Update Check - $Timestamp
 Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host "  Git Repository Update Checker" -ForegroundColor Cyan
-Write-Host "  Scanning: $ScriptDir" -ForegroundColor Cyan
+Write-Host "  Scanning: $ScanDir" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Get all directories with .git folder
-$GitRepos = Get-ChildItem -Path $ScriptDir -Directory -ErrorAction SilentlyContinue | Where-Object {
+$GitRepos = Get-ChildItem -Path $ScanDir -Directory -ErrorAction SilentlyContinue | Where-Object {
     Test-Path (Join-Path $_.FullName ".git")
 }
 
