@@ -171,6 +171,81 @@ if ($UpdatesFound -gt 0) {
     catch {
         Write-Host "Could not show notification: $_" -ForegroundColor DarkGray
     }
+
+    # Interactive pull prompt
+    Write-Host ""
+    Write-Host "============================================" -ForegroundColor Magenta
+    Write-Host "  Pull Updates?" -ForegroundColor Magenta
+    Write-Host "============================================" -ForegroundColor Magenta
+    Write-Host ""
+    Write-Host "Repos with updates:" -ForegroundColor Yellow
+
+    $ReposToUpdate = $Results | Where-Object { $_.Status -eq "UPDATE AVAILABLE" }
+    $Index = 1
+    foreach ($Repo in $ReposToUpdate) {
+        Write-Host "  [$Index] $($Repo.Repo) - $($Repo.Behind) commit(s) behind" -ForegroundColor Yellow
+        $Index++
+    }
+
+    Write-Host ""
+    Write-Host "Options:" -ForegroundColor Cyan
+    Write-Host "  [A] Pull ALL repos with updates"
+    Write-Host "  [1-$($ReposToUpdate.Count)] Pull specific repo (enter number)"
+    Write-Host "  [S] Skip / Exit"
+    Write-Host ""
+
+    $Continue = $true
+    while ($Continue) {
+        $Choice = Read-Host "Enter choice (A/1-$($ReposToUpdate.Count)/S)"
+
+        if ($Choice -eq 'A' -or $Choice -eq 'a') {
+            # Pull all repos
+            Write-Host ""
+            foreach ($Repo in $ReposToUpdate) {
+                $RepoPath = Join-Path $ScanDir $Repo.Repo
+                Write-Host "Pulling: $($Repo.Repo)..." -NoNewline -ForegroundColor Cyan
+                Push-Location $RepoPath
+                $PullResult = git pull 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host " Done!" -ForegroundColor Green
+                } else {
+                    Write-Host " Failed!" -ForegroundColor Red
+                    Write-Host "  $PullResult" -ForegroundColor Red
+                }
+                Pop-Location
+            }
+            $Continue = $false
+        }
+        elseif ($Choice -eq 'S' -or $Choice -eq 's') {
+            Write-Host "Skipped." -ForegroundColor Gray
+            $Continue = $false
+        }
+        elseif ($Choice -match '^\d+$') {
+            $RepoIndex = [int]$Choice - 1
+            if ($RepoIndex -ge 0 -and $RepoIndex -lt $ReposToUpdate.Count) {
+                $SelectedRepo = $ReposToUpdate[$RepoIndex]
+                $RepoPath = Join-Path $ScanDir $SelectedRepo.Repo
+                Write-Host "Pulling: $($SelectedRepo.Repo)..." -NoNewline -ForegroundColor Cyan
+                Push-Location $RepoPath
+                $PullResult = git pull 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host " Done!" -ForegroundColor Green
+                } else {
+                    Write-Host " Failed!" -ForegroundColor Red
+                    Write-Host "  $PullResult" -ForegroundColor Red
+                }
+                Pop-Location
+                Write-Host ""
+                Write-Host "Pull another? (A/1-$($ReposToUpdate.Count)/S)" -ForegroundColor Cyan
+            } else {
+                Write-Host "Invalid number. Try again." -ForegroundColor Red
+            }
+        }
+        else {
+            Write-Host "Invalid choice. Enter A, S, or a number." -ForegroundColor Red
+        }
+    }
 }
 
+Write-Host ""
 Write-Host "============================================" -ForegroundColor Cyan
