@@ -1,3 +1,9 @@
 # Log files
 git_update_log.txt
 *.log
+
+# Claude Code session data
+.claude/
+
+# Development planning docs
+plans/

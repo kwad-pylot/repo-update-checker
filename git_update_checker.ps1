@@ -2,6 +2,10 @@
 # Git Repository Update Checker (PowerShell)
 # Checks all repos in the parent folder
 # ============================================
+param(
+    [switch]$Silent,    # Use -Silent for scheduled tasks (no interactive prompt)
+    [switch]$CheckOnly  # Use -CheckOnly to just check and return exit code (0=no updates, 1=updates found)
+)
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ScanDir = Split-Path -Parent $ScriptDir  # Scan parent folder (where all repos live)
@@ -22,12 +26,14 @@ Git Update Check - $Timestamp
 ============================================
 "@
 
-Write-Host ""
-Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  Git Repository Update Checker" -ForegroundColor Cyan
-Write-Host "  Scanning: $ScanDir" -ForegroundColor Cyan
-Write-Host "============================================" -ForegroundColor Cyan
-Write-Host ""
+if (-not $CheckOnly) {
+    Write-Host ""
+    Write-Host "============================================" -ForegroundColor Cyan
+    Write-Host "  Git Repository Update Checker" -ForegroundColor Cyan
+    Write-Host "  Scanning: $ScanDir" -ForegroundColor Cyan
+    Write-Host "============================================" -ForegroundColor Cyan
+    Write-Host ""
+}
 
 # Get all directories with .git folder
 $GitRepos = Get-ChildItem -Path $ScanDir -Directory -ErrorAction SilentlyContinue | Where-Object {
@@ -39,7 +45,7 @@ foreach ($Repo in $GitRepos) {
     $RepoName = $Repo.Name
     $RepoPath = $Repo.FullName
 
-    Write-Host "Checking: $RepoName" -NoNewline
+    if (-not $CheckOnly) { Write-Host "Checking: $RepoName" -NoNewline }
 
     Push-Location $RepoPath
 
@@ -61,9 +67,11 @@ foreach ($Repo in $GitRepos) {
                 # Get latest remote commit
                 $LatestCommit = git log --oneline "@{u}" -1 2>&1
 
-                Write-Host " [UPDATE AVAILABLE]" -ForegroundColor Yellow
-                Write-Host "  $Behind new commit(s) on branch $CurrentBranch" -ForegroundColor Yellow
-                Write-Host "  Latest: $LatestCommit" -ForegroundColor Gray
+                if (-not $CheckOnly) {
+                    Write-Host " [UPDATE AVAILABLE]" -ForegroundColor Yellow
+                    Write-Host "  $Behind new commit(s) on branch $CurrentBranch" -ForegroundColor Yellow
+                    Write-Host "  Latest: $LatestCommit" -ForegroundColor Gray
+                }
 
                 $Results += [PSCustomObject]@{
                     Repo = $RepoName
@@ -74,7 +82,7 @@ foreach ($Repo in $GitRepos) {
                 }
             }
             else {
-                Write-Host " [UP TO DATE]" -ForegroundColor Green
+                if (-not $CheckOnly) { Write-Host " [UP TO DATE]" -ForegroundColor Green }
                 $Results += [PSCustomObject]@{
                     Repo = $RepoName
                     Status = "UP TO DATE"
@@ -88,7 +96,7 @@ foreach ($Repo in $GitRepos) {
             # Check if remote exists
             $Remotes = git remote -v 2>&1
             if ($Remotes) {
-                Write-Host " [NO UPSTREAM]" -ForegroundColor DarkYellow
+                if (-not $CheckOnly) { Write-Host " [NO UPSTREAM]" -ForegroundColor DarkYellow }
                 $Results += [PSCustomObject]@{
                     Repo = $RepoName
                     Status = "NO UPSTREAM"
@@ -98,7 +106,7 @@ foreach ($Repo in $GitRepos) {
                 }
             }
             else {
-                Write-Host " [NO REMOTE]" -ForegroundColor DarkGray
+                if (-not $CheckOnly) { Write-Host " [NO REMOTE]" -ForegroundColor DarkGray }
                 $Results += [PSCustomObject]@{
                     Repo = $RepoName
                     Status = "NO REMOTE"
@@ -110,8 +118,10 @@ foreach ($Repo in $GitRepos) {
         }
     }
     catch {
-        Write-Host " [ERROR]" -ForegroundColor Red
-        Write-Host "  $_" -ForegroundColor Red
+        if (-not $CheckOnly) {
+            Write-Host " [ERROR]" -ForegroundColor Red
+            Write-Host "  $_" -ForegroundColor Red
+        }
         $Results += [PSCustomObject]@{
             Repo = $RepoName
             Status = "ERROR"
@@ -122,6 +132,15 @@ foreach ($Repo in $GitRepos) {
     }
 
     Pop-Location
+}
+
+# CheckOnly mode: exit early with appropriate code
+if ($CheckOnly) {
+    if ($UpdatesFound -gt 0) {
+        exit 1  # Updates found
+    } else {
+        exit 0  # No updates
+    }
 }
 
 # Summary
@@ -172,10 +191,11 @@ if ($UpdatesFound -gt 0) {
         Write-Host "Could not show notification: $_" -ForegroundColor DarkGray
     }
 
-    # Interactive pull prompt
-    Write-Host ""
-    Write-Host "============================================" -ForegroundColor Magenta
-    Write-Host "  Pull Updates?" -ForegroundColor Magenta
+    # Interactive pull prompt (only if not running silently)
+    if (-not $Silent) {
+        Write-Host ""
+        Write-Host "============================================" -ForegroundColor Magenta
+        Write-Host "  Pull Updates?" -ForegroundColor Magenta
     Write-Host "============================================" -ForegroundColor Magenta
     Write-Host ""
     Write-Host "Repos with updates:" -ForegroundColor Yellow
@@ -245,6 +265,7 @@ if ($UpdatesFound -gt 0) {
             Write-Host "Invalid choice. Enter A, S, or a number." -ForegroundColor Red
         }
     }
+    }  # End if (-not $Silent)
 }
 
 Write-Host ""
