@@ -23,7 +23,7 @@ A Windows tool that automatically checks all Git repositories in a folder for av
 
 ## Setup
 
-1. Place the scripts in your Git projects folder (e.g., `C:\Users\you\GitHub Projects\repo-update-checker\`)
+1. Place the scripts in your Git projects folder (e.g., `C:\Users\you\GitHub Projects\devtool_github-repo-update-checker\`)
 2. Import the scheduled task:
    ```powershell
    schtasks /create /xml "GitUpdateChecker_Task.xml" /tn "Git Update Checker"

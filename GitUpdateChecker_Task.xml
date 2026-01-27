@@ -82,8 +82,8 @@
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>C:\Users\py\Desktop\GitHub Projects\repo-update-checker\run_git_checker.bat</Command>
-      <WorkingDirectory>C:\Users\py\Desktop\GitHub Projects\repo-update-checker</WorkingDirectory>
+      <Command>C:\Users\py\Desktop\GitHub Projects\devtool_github-repo-update-checker\run_git_checker.bat</Command>
+      <WorkingDirectory>C:\Users\py\Desktop\GitHub Projects\devtool_github-repo-update-checker</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>

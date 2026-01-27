@@ -30,7 +30,7 @@ Or use the batch files:
 schtasks /create /xml "GitUpdateChecker_Task.xml" /tn "Git Update Checker"
 ```
 
-The XML file contains hardcoded paths to `C:\Users\py\Desktop\GitHub Projects\repo-update-checker\` - update these if the repo location changes.
+The XML file contains hardcoded paths to `C:\Users\py\Desktop\GitHub Projects\devtool_github-repo-update-checker\` - update these if the repo location changes.
 
 ## Architecture
 
